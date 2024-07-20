@@ -20,7 +20,6 @@ async function executarSQL(sql){
             detail: error.message
         };
     }
-    
 }
 
 module.exports = {
