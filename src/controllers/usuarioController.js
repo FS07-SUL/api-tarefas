@@ -5,7 +5,6 @@ const bcrypt = require('bcrypt');
 
 async function logar(dados){
     try {
-
         if(!dados.usuario_email || dados.usuario_email == ""){
             throw new Error("Campo email é obrigatório");
         }
@@ -14,20 +13,27 @@ async function logar(dados){
             throw new Error("Campo senha é obrigatório");
         }
 
-        const result = await executarSQL(`SELECT * FROM usuarios WHERE usuario_email = '${dados.usuario_email}' AND usuario_senha = '${dados.usuario_senha}';`);
+        const res = await executarSQL(`SELECT * FROM usuarios WHERE usuario_email = '${dados.usuario_email}';`);
 
-        if(result.length == 0){
+        if(res.length > 0){
+            const compare = await bcrypt.compare(dados.usuario_senha, res[0].usuario_senha);
+            if(compare){
+                const token = jwt.sign({ id: res.usuario_id }, process.env.SEGREDO, { expiresIn: '1h' });
+                return { token };
+            }else{
+                return {
+                    severity: 'warn',
+                    detail: 'Email ou Senha incorretos'
+                }
+            }
+        }else{
             return {
                 severity: 'warn',
                 detail: 'Email ou Senha incorretos'
             }
         }
 
-        const token = jwt.sign({ id: result.usuario_id }, process.env.SEGREDO, { expiresIn: '1h' });
 
-        return {
-            token
-        }
     } catch (error) {
         return {
             severity: 'error',
